@@ -10,9 +10,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var datePlan []time.Time
-var UserNames []string
-var StudentNos []int
+var users []model.User
+var plans []model.Plan
 
 func State(c int) {
 	switch c {
@@ -33,10 +32,44 @@ func State(c int) {
 	}
 }
 
+func GetAllNames() []string {
+	db := config.DB
+	State(0)
+	db.Find(&users)
+	var UserNames []string
+	for _, v := range users {
+		UserNames = append(UserNames, v.Name)
+	}
+	return UserNames
+}
+
+func GetAllDates() []time.Time {
+	db := config.DB
+	State(0)
+	db.Find(&plans)
+	var dates []time.Time
+	for _, v := range plans {
+		dates = append(dates, v.Date)
+	}
+	return dates
+}
+
+func GetAllNOs() []int {
+	db := config.DB
+	State(0)
+	db.Find(&users)
+	var studentNumbers []int
+	for _, v := range users {
+		studentNumbers = append(studentNumbers, v.StudentNo)
+	}
+	return studentNumbers
+}
+
 func CreatePlan(c echo.Context) error {
 	b := new(model.Plan)
 	db := config.DB
 	State(0)
+	GetAllDates()
 
 	// Binding data
 	if err := c.Bind(b); err != nil {
@@ -48,20 +81,16 @@ func CreatePlan(c echo.Context) error {
 
 	}
 
-	if CheckUsers(b.Name) == false {
+	if !CheckUsers(b.Name) {
 		return c.String(http.StatusInternalServerError, "Kullanıcı adı bulunamadı")
 	}
-	for _, s := range datePlan {
-		if s.Year() == b.Date.Year() && s.Month() == b.Date.Month() && b.Date.Day() == s.Day() && b.Date.Hour() == s.Hour() {
-			for _, v := range UserNames {
-				if v == b.Name {
-					State(2)
-					return c.String(http.StatusInternalServerError, "Aynı zaman aralığında farklı bir plan olduğu için kayıt iptal edildi.")
-				}
-			}
+	for _, s := range plans {
+		if s.Date.Year() == b.Date.Year() && s.Date.Month() == b.Date.Month() && b.Date.Day() == s.Date.Day() && b.Date.Hour() == s.Date.Hour() && s.Name == b.Name {
+			State(2)
+			return c.String(http.StatusInternalServerError, "Aynı zaman aralığında farklı bir plan olduğu için kayıt iptal edildi.")
 		}
 	}
-	datePlan = append(datePlan, b.Date)
+
 	if err := db.Create(&b).Error; err != nil {
 
 		data := map[string]interface{}{
@@ -93,7 +122,7 @@ func UpdatePlan(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, data)
 	}
 
-	if CheckUsers(b.Name) == false {
+	if !CheckUsers(b.Name) {
 		return c.String(http.StatusInternalServerError, "Kullanıcı adı bulunamadı")
 	}
 
@@ -131,6 +160,7 @@ func GetPlan(c echo.Context) error {
 	id := c.Param("id")
 	db := config.DB
 	var plans []*model.Plan
+	fmt.Println(GetAllNames())
 
 	if res := db.Find(&plans, id); res.Error != nil {
 		data := map[string]interface{}{
@@ -183,9 +213,6 @@ func DeletePlan(c echo.Context) error {
 		State(2)
 		return c.JSON(http.StatusNotFound, data)
 	}
-	if CheckUsers(plan.Name) == false {
-		return c.String(http.StatusInternalServerError, "Kullanıcı adı bulunamadı")
-	}
 	plan.State = "canceled"
 	db.Save(&plan)
 
@@ -226,7 +253,7 @@ func CheckAndUpdatePlans() {
 		}
 	}
 }
-func AddUser(c echo.Context) error {
+func CreateUser(c echo.Context) error {
 	a := new(model.User)
 	db := config.DB
 	State(0)
@@ -240,16 +267,13 @@ func AddUser(c echo.Context) error {
 
 	}
 
-	for _, s := range StudentNos {
+	for _, s := range GetAllNOs() {
 		if s == a.StudentNo {
 			fmt.Println(s)
 			State(2)
 			return c.String(http.StatusInternalServerError, "Öğrenci numarası kayıtlıdır.Lütfen tekrar deneyiniz.")
 		}
 	}
-	StudentNos = append(StudentNos, a.StudentNo)
-	UserNames = append(UserNames, a.Name)
-	fmt.Println(UserNames)
 	if err := db.Create(&a).Error; err != nil {
 
 		data := map[string]interface{}{
@@ -280,9 +304,8 @@ func UpdateUser(c echo.Context) error {
 		State(2)
 		return c.JSON(http.StatusInternalServerError, data)
 	}
-
-	if CheckUsers(d.Name) == false {
-		return c.String(http.StatusInternalServerError, "Kullanıcı adı bulunamadı")
+	if CheckNumbers(d.StudentNo) {
+		return c.String(http.StatusInternalServerError, "Ogrenci numarasi sistemde mevcut.")
 	}
 
 	existing_Plan := new(model.User)
@@ -294,8 +317,10 @@ func UpdateUser(c echo.Context) error {
 		State(2)
 		return c.JSON(http.StatusNotFound, data)
 	}
-
+	fmt.Println(existing_Plan)
 	existing_Plan.Name = d.Name
+	existing_Plan.StudentNo = d.StudentNo
+	fmt.Println(existing_Plan)
 
 	if err := db.Save(&existing_Plan).Error; err != nil {
 
@@ -315,15 +340,20 @@ func UpdateUser(c echo.Context) error {
 
 func CheckUsers(c string) bool {
 	sayac := false
-	for _, v := range UserNames {
+	for _, v := range GetAllNames() {
 		if v == c {
 			sayac = true
 		}
 	}
-	if sayac == false {
-		// Hata işleme
-		return false
-	} else {
-		return true
+	return sayac
+}
+
+func CheckNumbers(c int) bool {
+	sayac := false
+	for _, v := range GetAllNOs() {
+		if v == c {
+			sayac = true
+		}
 	}
+	return sayac
 }

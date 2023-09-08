@@ -22,13 +22,13 @@ func main() {
 
 	planRoute := e.Group("/plan")
 	planRoute.POST("/", controller.CreatePlan)
-	planRoute.POST("/user", controller.AddUser)
+	planRoute.POST("/user", controller.CreateUser)
 	planRoute.GET("/:id", controller.GetPlan)
 	planRoute.GET("/", controller.GetAllPlans)
 	planRoute.GET("/week", controller.GetNextWeek)
 	planRoute.GET("/month", controller.GetNextMonth)
 	planRoute.PUT("/:id", controller.UpdatePlan)
-	planRoute.PUT("/:id", controller.UpdateUser)
+	planRoute.PUT("/user/:id", controller.UpdateUser)
 	planRoute.DELETE("/:id", controller.DeletePlan)
 
 	// Zamanlanmış işlemi başlatın
