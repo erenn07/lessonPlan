@@ -160,7 +160,6 @@ func GetPlan(c echo.Context) error {
 	id := c.Param("id")
 	db := config.DB
 	var plans []*model.Plan
-	fmt.Println(GetAllNames())
 
 	if res := db.Find(&plans, id); res.Error != nil {
 		data := map[string]interface{}{
@@ -169,7 +168,6 @@ func GetPlan(c echo.Context) error {
 		State(2)
 		return c.JSON(http.StatusNotFound, data)
 	}
-	fmt.Println(plans[0])
 	response := map[string]interface{}{
 		"data": plans[0],
 	}
@@ -269,7 +267,6 @@ func CreateUser(c echo.Context) error {
 
 	for _, s := range GetAllNOs() {
 		if s == a.StudentNo {
-			fmt.Println(s)
 			State(2)
 			return c.String(http.StatusInternalServerError, "Öğrenci numarası kayıtlıdır.Lütfen tekrar deneyiniz.")
 		}
@@ -317,10 +314,9 @@ func UpdateUser(c echo.Context) error {
 		State(2)
 		return c.JSON(http.StatusNotFound, data)
 	}
-	fmt.Println(existing_Plan)
+
 	existing_Plan.Name = d.Name
 	existing_Plan.StudentNo = d.StudentNo
-	fmt.Println(existing_Plan)
 
 	if err := db.Save(&existing_Plan).Error; err != nil {
 
