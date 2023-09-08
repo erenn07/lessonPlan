@@ -15,6 +15,8 @@ var DB *gorm.DB
 
 // Initialize connection object.
 func DatabaseInit() {
+
+	// .env uzantılı dosyadan gelen veriler yüklenir
 	godotenv.Load()
 	dbhost := os.Getenv("MYSQL_HOST")
 	dbuser := os.Getenv("MYSQL_USER")
@@ -35,10 +37,12 @@ func DatabaseInit() {
 		panic("failed to connect database")
 	}
 	DB = db
+	// Otomatik olarak database oluşturur ve database bağlantısı yapar.
 	AutoMigrate(db)
 	fmt.Println("Succesfull")
 }
 
+// Otomatik olarak tabloları oluşturur.Tablonun sütunlarını database içine aktarır.
 func AutoMigrate(connection *gorm.DB) {
 	connection.Debug().AutoMigrate(&model.Plan{})
 	connection.Debug().AutoMigrate(&model.User{})

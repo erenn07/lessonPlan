@@ -20,6 +20,7 @@ func main() {
 
 	dbGorm.Ping()
 
+	// Gruplandırma işlemi yapılır
 	planRoute := e.Group("/plan")
 	planRoute.POST("/", controller.CreatePlan)
 	planRoute.POST("/user", controller.CreateUser)
@@ -31,13 +32,13 @@ func main() {
 	planRoute.PUT("/user/:id", controller.UpdateUser)
 	planRoute.DELETE("/:id", controller.DeletePlan)
 
-	// Zamanlanmış işlemi başlatın
-	ticker := time.NewTicker(10 * time.Second) // Örnek: 1 saat aralıklarla kontrol edin
+	// State durumu için kontrol
+	ticker := time.NewTicker(10 * time.Second) // 10 saniye aralıklarla kontrol edilecek
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				// Her zamanlayıcı tetiklendiğinde, bitiş zamanına gelmiş planları kontrol edin ve güncelleyin
+				// Her zamanlayıcı tetiklendiğinde, biten planlar kontrol edilip güncellenecek
 				controller.CheckAndUpdatePlans()
 			}
 		}
